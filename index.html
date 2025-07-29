@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS Challenge - Hack Me If You Can</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            width: 90%;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            color: #00ffcc;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.7);
+            margin-bottom: 30px;
+        }
+        .challenge-box, .hint-box, .secret-box {
+            background: rgba(0, 255, 204, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #00ffcc;
+        }
+        .search-box {
+            margin: 20px 0;
+            text-align: center;
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: 70%;
+            border: none;
+            border-radius: 5px 0 0 5px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #1a1a2e;
+            outline: none;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            background: #00ffcc;
+            color: #1a1a2e;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #00ccaa;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.7);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            min-height: 20px;
+        }
+        .success {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+        }
+        .failure {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+        }
+        #secretContainer {
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>XSS Challenge</h1>
+        
+        <div class="challenge-box">
+            <h2>Challenge</h2>
+            <p>Exploit the search box to reveal a hidden secret message!</p>
+        </div>
+
+        <div class="hint-box">
+            <h2>Hint</h2>
+            <p>Try injecting code to call a special function... Check the source!</p>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Enter your search...">
+            <button onclick="performSearch()">Search</button>
+        </div>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const secretData = [80, 97, 115, 115, 119, 111, 114, 100, 64, 51, 51, 53, 54, 98, 54, 50, 95];
+        
+        window.revealSecret = function() {
+            alert('Congratulations! You\'ve exploited the XSS vulnerability!');
+            
+            const secretContainer = document.createElement('div');
+            secretContainer.id = 'secretContainer';
+            secretContainer.className = 'secret-box';
+            
+            const heading = document.createElement('h2');
+            heading.textContent = 'Secret Unlocked!';
+            secretContainer.appendChild(heading);
+            
+            const paragraph = document.createElement('p');
+            paragraph.textContent = 'You\'ve unlocked the vault! The secret Password is: ';
+            
+            const strong = document.createElement('strong');
+            strong.textContent = '{' + String.fromCharCode(...secretData) + '}';
+            
+            paragraph.appendChild(strong);
+            secretContainer.appendChild(paragraph);
+            
+            document.querySelector('.container').appendChild(secretContainer);
+        };
+
+        function performSearch() {
+            const input = document.getElementById('searchInput').value;
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.innerHTML = '';
+            resultDiv.className = 'result';
+
+            resultDiv.innerHTML = 'Search result for: ' + input;
+
+            if (input.toLowerCase().includes('<script>')) {
+                try {
+                    const scriptMatch = input.match(/<script>([\s\S]*?)<\/script>/i);
+                    if (scriptMatch && scriptMatch[1]) {
+                        const scriptContent = scriptMatch[1].trim();
+                        const scriptElement = document.createElement('script');
+                        scriptElement.textContent = scriptContent;
+                        document.body.appendChild(scriptElement);
+                    } else {
+                        throw new Error('Invalid script tag format');
+                    }
+                } catch (e) {
+                    console.error('XSS execution failed:', e.message);
+                    resultDiv.innerHTML += '<br>Error executing script: ' + e.message;
+                }
+            } else {
+                resultDiv.className = 'result failure';
+                resultDiv.innerHTML += '<br>Keep trying...';
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    </script>
+</body>
+</html>
